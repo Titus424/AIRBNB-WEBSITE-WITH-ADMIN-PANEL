@@ -1,0 +1,64 @@
+<?php
+// callback.php - Simple M-Pesa callback handler
+require "config/config.php";
+
+// Get callback data
+$json = file_get_contents('php://input');
+$data = json_decode($json, true);
+
+// Log callback for debugging
+file_put_contents('mpesa_log.txt', date('Y-m-d H:i:s') . " - " . $json . "\n", FILE_APPEND);
+
+// Process the callback
+if (isset($data['Body']['stkCallback'])) {
+    $callback = $data['Body']['stkCallback'];
+    
+    if ($callback['ResultCode'] == 0) {
+        // Payment successful
+        $receipt = '';
+        $amount = '';
+        
+        if (isset($callback['CallbackMetadata']['Item'])) {
+            foreach ($callback['CallbackMetadata']['Item'] as $item) {
+                if ($item['Name'] == 'MpesaReceiptNumber') {
+                    $receipt = $item['Value'];
+                }
+                if ($item['Name'] == 'Amount') {
+                    $amount = $item['Value'];
+                }
+            }
+        }
+        
+        // You can update your booking table here
+        // Example: UPDATE bookings SET payment_status = 'paid', mpesa_receipt = '$receipt' WHERE amount = '$amount'
+        
+        file_put_contents('mpesa_log.txt', date('Y-m-d H:i:s') . " - Payment Success: Receipt $receipt, Amount $amount\n", FILE_APPEND);
+    } else {
+        // Payment failed
+        file_put_contents('mpesa_log.txt', date('Y-m-d H:i:s') . " - Payment Failed: " . $callback['ResultDesc'] . "\n", FILE_APPEND);
+    }
+}
+
+// Respond to M-Pesa
+echo json_encode(['ResultCode' => 0, 'ResultDesc' => 'Success']);
+?>2025-09-14 19:28:44 - STK Push Payload: {"BusinessShortCode":"174379","Password":"MTc0Mzc5YmZiMjc5ZjlhYTliZGJjZjE1OGU5N2RkNzFhNDY3Y2QyZTBjODkzMDU5YjEwZjc4ZTZiNzJhZGExZWQyYzkxOTIwMjUwOTE0MTkyODQ0","Timestamp":"20250914192844","TransactionType":"CustomerPayBillOnline","Amount":6000,"PartyA":"254708374149","PartyB":"174379","PhoneNumber":"254708374149","CallBackURL":"http:\/\/localhost\/hotel-booking\/callback.php","AccountReference":"Hotel-68c6fb4ccfc12","TransactionDesc":"Hotel Room Payment"}
+2025-09-14 19:28:46 - STK Push HTTP Code: 400, Response: {
+                    "requestId":"fce6-4b57-92f3-69953381c0d213370",
+                    "errorCode": "400.002.02",
+                    "errorMessage": "Bad Request - Invalid CallBackURL"
+                }
+            
+2025-09-14 19:33:31 - STK Push Payload: {"BusinessShortCode":"174379","Password":"MTc0Mzc5YmZiMjc5ZjlhYTliZGJjZjE1OGU5N2RkNzFhNDY3Y2QyZTBjODkzMDU5YjEwZjc4ZTZiNzJhZGExZWQyYzkxOTIwMjUwOTE0MTkzMzMx","Timestamp":"20250914193331","TransactionType":"CustomerPayBillOnline","Amount":18000,"PartyA":"254+254 742884088","PartyB":"174379","PhoneNumber":"254+254 742884088","CallBackURL":"https:\/\/webhook.site\/ca998cf5-80d7-49d8-b8f6-a738a8fdf076","AccountReference":"Hotel-68c6fc6b2587d","TransactionDesc":"Hotel Room Payment"}
+2025-09-14 19:33:33 - STK Push HTTP Code: 400, Response: {
+                    "requestId":"1fa5-4ea5-85f2-45cc2cc56fe52625",
+                    "errorCode": "400.002.02",
+                    "errorMessage": "Bad Request - Invalid PhoneNumber"
+                }
+            
+2025-09-14 19:35:29 - STK Push Payload: {"BusinessShortCode":"174379","Password":"MTc0Mzc5YmZiMjc5ZjlhYTliZGJjZjE1OGU5N2RkNzFhNDY3Y2QyZTBjODkzMDU5YjEwZjc4ZTZiNzJhZGExZWQyYzkxOTIwMjUwOTE0MTkzNTI5","Timestamp":"20250914193529","TransactionType":"CustomerPayBillOnline","Amount":18000,"PartyA":"254+254 742884088","PartyB":"174379","PhoneNumber":"254+254 742884088","CallBackURL":"https:\/\/webhook.site\/ca998cf5-80d7-49d8-b8f6-a738a8fdf076","AccountReference":"Hotel-68c6fce1075e9","TransactionDesc":"Hotel Room Payment"}
+2025-09-14 19:35:31 - STK Push HTTP Code: 400, Response: {
+                    "requestId":"e7d9-4826-a2ea-a83cba54c8559988",
+                    "errorCode": "400.002.02",
+                    "errorMessage": "Bad Request - Invalid PhoneNumber"
+                }
+            
